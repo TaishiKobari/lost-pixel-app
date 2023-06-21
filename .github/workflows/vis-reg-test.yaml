@@ -1,6 +1,6 @@
 on:
   pull_request:
-    types: [labeled]
+    types: labeled
 
 jobs:
   baseline:
@@ -47,7 +47,7 @@ jobs:
   current:
     runs-on: ubuntu-latest
     needs: baseline
-    if: github.event.label == 'run-vrt'
+    if: github.event.label.name == 'run-vrt'
 
     steps:
       - name: Checkout
