@@ -1,32 +1,31 @@
 on:
-  issue_comment:
-    types: [created, deleted]
+  pull_request:
+    types: [labeled]
 
 jobs:
-  print_context:
-    runs-on: ubuntu-latest
-    steps:
-      - env:
-          EVENT_CONTEXT: ${{ toJSON(github.event) }}
-        run: |
-          echo $EVENT_CONTEXT
-
-  build:
-    if: github.event.issue.pull_request && (github.event.comment.body == '/vrt')
+  baseline:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.issue.pull_request }}
+          ref: ${{ github.base_ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
 
-      - name: Install dependencies
+      - name: Cache node modules
+        id: cache-node-modules
+        uses: actions/cache@v3
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock') }}
+
+      - if: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
         run: yarn install --immutable
 
       - name: Build Storybook
@@ -34,3 +33,56 @@ jobs:
 
       - name: Lost Pixel
         uses: lost-pixel/lost-pixel@v3.4.0
+        env:
+          LOST_PIXEL_MODE: update
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: lost-pixel-baseline
+          path: .lostpixel/baseline
+          retention-days: 1
+
+  current:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Cache node modules
+        id: cache-node-modules
+        uses: actions/cache@v3
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock') }}
+
+      - if: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
+        run: yarn install --immutable
+
+      - name: Build Storybook
+        run: yarn build-storybook
+
+      - name: Download baseline
+        uses: actions/download-artifact@v3
+        with:
+          name: lost-pixel-baseline
+          path: .lostpixel/baseline
+
+      - name: Lost Pixel
+        uses: lost-pixel/lost-pixel@v3.4.0
+
+      - name: upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: lost-pixel-result
+          path: .lostpixel
+          retention-days: 7
