@@ -5,7 +5,7 @@ on:
 jobs:
   baseline:
     runs-on: ubuntu-latest
-    if: github.event.label == 'run-vrt'
+    if: github.event.label.name == 'run-vrt'
 
     steps:
       - name: Checkout
