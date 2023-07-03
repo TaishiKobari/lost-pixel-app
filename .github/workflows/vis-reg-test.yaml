@@ -35,6 +35,7 @@ jobs:
       - name: Lost Pixel
         uses: lost-pixel/lost-pixel@v3.4.0
         env:
+          FAIL_ON_DIFFERENCE: true
           LOST_PIXEL_MODE: update
 
       - name: Archive code coverage results
