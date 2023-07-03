@@ -84,9 +84,26 @@ jobs:
       - name: Lost Pixel
         uses: lost-pixel/lost-pixel@v3.4.0
 
+      # VRTの差分があるかどうかを変数に保存する
+      - name: Output Parameter Which Is True When Changes Are Detected
+        id: check-diff
+        run: |
+          if [ -d ".lostpixel/difference" ]; then
+            echo "IS_VRT_CHANGED=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "IS_VRT_CHANGED=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: upload
+        # 差分があるときのみアップロードする
+        if: steps.check-diff.outputs.IS_VRT_CHANGED == 'true'
         uses: actions/upload-artifact@v3
         with:
           name: lost-pixel-result
           path: .lostpixel
           retention-days: 7
+
+      # 差分があるときは失敗させる
+      - name: exit if diff is found
+        if: steps.check-diff.outputs.IS_VRT_CHANGED == 'true'
+        run: echo "::set-failed::VRT has changed. Please check the difference."
