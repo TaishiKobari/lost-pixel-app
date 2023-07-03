@@ -106,4 +106,4 @@ jobs:
       # 差分があるときは失敗させる
       - name: exit if diff is found
         if: steps.check-diff.outputs.IS_VRT_CHANGED == 'true'
-        run: echo "::set-failed::VRT has changed. Please check the difference."
+        run: exit 1
