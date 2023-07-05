@@ -88,10 +88,10 @@ jobs:
       - name: Output Parameter Which Is True When Changes Are Detected
         id: check-diff
         run: |
-          if [ -d ".lostpixel/difference" ]; then
-            echo "IS_VRT_CHANGED=true" >> "$GITHUB_OUTPUT"
-          else
+          if [ -z "$(find ".lostpixel/difference" -mindepth 1 -maxdepth 1)" ]; then
             echo "IS_VRT_CHANGED=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "IS_VRT_CHANGED=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: upload
@@ -103,7 +103,7 @@ jobs:
           path: .lostpixel
           retention-days: 7
 
-      # 差分があるときは失敗させる
+      # 差分があるときは失敗させる。
       - name: exit if diff is found
         if: steps.check-diff.outputs.IS_VRT_CHANGED == 'true'
         run: exit 1
